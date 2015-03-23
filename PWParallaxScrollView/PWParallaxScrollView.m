@@ -98,8 +98,8 @@ static const NSInteger PWInvalidPosition = -1;
 
 - (void)moveToIndex:(NSInteger)index
 {
-    CGFloat newOffsetX = index * CGRectGetWidth(_touchScrollView.frame);
-    [_touchScrollView scrollRectToVisible:CGRectMake(newOffsetX, 0, CGRectGetWidth(_touchScrollView.frame), CGRectGetHeight(_touchScrollView.frame)) animated:YES];
+    CGFloat newOffsetY = index * CGRectGetHeight(_touchScrollView.frame);
+    [_touchScrollView scrollRectToVisible:CGRectMake(0, newOffsetY, CGRectGetWidth(_touchScrollView.frame), CGRectGetHeight(_touchScrollView.frame)) animated:YES];
 }
 
 - (void)prevItem
@@ -122,7 +122,7 @@ static const NSInteger PWInvalidPosition = -1;
     self.userHoldingDownIndex = 0;
     self.numberOfItems = [self.dataSource numberOfItemsInScrollView:self];
     
-    UIView *contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.frame) * _numberOfItems, CGRectGetHeight(self.frame))];
+    UIView *contentView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame) * _numberOfItems)];
     contentView.backgroundColor = [UIColor clearColor];
     
     [_backgroundScrollView setContentOffset:CGPointMake(0, 0) animated:NO];
@@ -132,7 +132,7 @@ static const NSInteger PWInvalidPosition = -1;
     
     [_foregroundScrollView setContentOffset:CGPointMake(0, 0) animated:NO];
     [_foregroundScrollView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
-    [_foregroundScrollView setContentSize:CGSizeMake(CGRectGetWidth(_foregroundScrollView.frame) * _numberOfItems, CGRectGetHeight(_foregroundScrollView.frame))];
+    [_foregroundScrollView setContentSize:CGSizeMake(CGRectGetWidth(_foregroundScrollView.frame), CGRectGetHeight(_foregroundScrollView.frame) * _numberOfItems)];
     
     [_touchScrollView setContentOffset:CGPointMake(0, 0) animated:NO];
     [_touchScrollView setContentSize:contentView.frame.size];
@@ -164,7 +164,7 @@ static const NSInteger PWInvalidPosition = -1;
     
     UIView *view = [self.dataSource foregroundViewAtIndex:index scrollView:self];
     CGRect newFrame = view.frame;
-    newFrame.origin.x += index * CGRectGetWidth(_foregroundScrollView.frame);
+    newFrame.origin.y += index * CGRectGetHeight(_foregroundScrollView.frame);
     [view setFrame:newFrame];
     [view setTag:index];
     
@@ -178,7 +178,7 @@ static const NSInteger PWInvalidPosition = -1;
     }
     
     UIView *view = [self.dataSource backgroundViewAtIndex:index scrollView:self];
-    [view setFrame:CGRectMake(index * CGRectGetWidth(self.frame), 0, CGRectGetWidth(self.frame), CGRectGetHeight(self.frame))];
+    [view setFrame:CGRectMake(0, index * CGRectGetHeight(self.frame), CGRectGetWidth(self.frame), CGRectGetHeight(self.frame))];
     [view setTag:index];
     
     return view;
@@ -199,29 +199,29 @@ static const NSInteger PWInvalidPosition = -1;
     [_backgroundScrollView addSubview:newTopView];
 }
 
-- (void)determineBackgroundView:(float)offsetX
+- (void)determineBackgroundView:(float)offsetY
 {
-    CGFloat newCenterX = 0;
+    CGFloat newCenterY = 0;
     NSInteger newBackgroundViewIndex = 0;
-    NSInteger midPoint = CGRectGetWidth(self.frame) * _userHoldingDownIndex;
+    NSInteger midPoint = CGRectGetHeight(self.frame) * _userHoldingDownIndex;
     
-    if (offsetX < midPoint) {
+    if (offsetY < midPoint) {
         //moving from left to right
         
-        newCenterX = (CGRectGetWidth(self.frame) * _userHoldingDownIndex - offsetX) / 2;
+        newCenterY = (CGRectGetHeight(self.frame) * _userHoldingDownIndex - offsetY) / 2;
         newBackgroundViewIndex = _userHoldingDownIndex - 1;
     }
-    else if (offsetX > midPoint) {
+    else if (offsetY > midPoint) {
         //moving from right to left
         
-        CGFloat leftSplitWidth = CGRectGetWidth(self.frame) * (_userHoldingDownIndex + 1) - offsetX;
-        CGFloat rightSplitWidth = CGRectGetWidth(self.frame) - leftSplitWidth;
+        CGFloat topSplitHeight = CGRectGetHeight(self.frame) * (_userHoldingDownIndex + 1) - offsetY;
+        CGFloat bottomSplitHeight = CGRectGetHeight(self.frame) - topSplitHeight;
         
-        newCenterX = rightSplitWidth / 2 + leftSplitWidth;
+        newCenterY = bottomSplitHeight / 2 + topSplitHeight;
         newBackgroundViewIndex = _userHoldingDownIndex + 1;
     }
     else {
-        newCenterX = CGRectGetWidth(self.frame) / 2 ;
+        newCenterY = CGRectGetHeight(self.frame) / 2 ;
         newBackgroundViewIndex = _backgroundViewIndex;
     }
     
@@ -239,13 +239,13 @@ static const NSInteger PWInvalidPosition = -1;
         }
     }
     
-    CGPoint center = CGPointMake(newCenterX, CGRectGetHeight(self.frame) / 2);
+    CGPoint center = CGPointMake(CGRectGetWidth(self.frame) / 2, newCenterY);
     self.currentBottomView.center = center;
 }
 
 - (NSInteger)backgroundViewIndexFromOffset:(CGPoint)offset
 {
-    NSInteger index = (offset.x / CGRectGetWidth(self.frame));
+    NSInteger index = (offset.y / CGRectGetHeight(self.frame));
     
     if (index >= _numberOfItems || index < 0) {
         index = PWInvalidPosition;
@@ -260,23 +260,23 @@ static const NSInteger PWInvalidPosition = -1;
 {
     [_backgroundScrollView setContentOffset:scrollView.contentOffset];
     
-    CGFloat factor = _foregroundScrollView.contentSize.width / scrollView.contentSize.width;
-    [_foregroundScrollView setContentOffset:CGPointMake(factor * scrollView.contentOffset.x, 0)];
+    CGFloat factor = _foregroundScrollView.contentSize.height / scrollView.contentSize.height;
+    [_foregroundScrollView setContentOffset:CGPointMake(0, factor * scrollView.contentOffset.y)];
     
-    CGFloat offsetX = scrollView.contentOffset.x;
-    [self determineBackgroundView:offsetX];
+    CGFloat offSetY = scrollView.contentOffset.y;
+    [self determineBackgroundView:offSetY];
     
     CGRect visibleRect;
     visibleRect.origin = scrollView.contentOffset;
     visibleRect.size = scrollView.bounds.size;
     
     CGRect userPenRect;
-    CGFloat width = CGRectGetWidth(scrollView.frame);
-    userPenRect.origin = CGPointMake(width * self.userHoldingDownIndex, 0);
+    CGFloat height = CGRectGetHeight(scrollView.frame);
+    userPenRect.origin = CGPointMake(0, height * self.userHoldingDownIndex);
     userPenRect.size = scrollView.bounds.size;
     
     if (!CGRectIntersectsRect(visibleRect, userPenRect)) {
-        if (CGRectGetMinX(visibleRect) - CGRectGetMinX(userPenRect) > 0) {
+        if (CGRectGetMinY(visibleRect) - CGRectGetMinY(userPenRect) > 0) {
             self.userHoldingDownIndex = _userHoldingDownIndex + 1;
         }
         else {
@@ -286,10 +286,10 @@ static const NSInteger PWInvalidPosition = -1;
         [self loadBackgroundViewAtIndex:_userHoldingDownIndex];
     }
     
-    CGFloat newCrrentIndex = round(1.0f * scrollView.contentOffset.x / CGRectGetWidth(self.frame));
+    CGFloat newCurrentIndex = round(1.0f * scrollView.contentOffset.y / CGRectGetHeight(self.frame));
     
-    if(_currentIndex != newCrrentIndex) {
-        self.currentIndex = newCrrentIndex;
+    if(_currentIndex != newCurrentIndex) {
+        self.currentIndex = newCurrentIndex;
         
         if([self.delegate respondsToSelector:@selector(parallaxScrollView:didChangeIndex:)]){
             [self.delegate parallaxScrollView:self didChangeIndex:self.currentIndex];

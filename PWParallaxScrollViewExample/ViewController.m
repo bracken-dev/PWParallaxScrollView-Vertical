@@ -93,7 +93,7 @@
     self.scrollView = [[PWParallaxScrollView alloc] initWithFrame:self.view.bounds];
 
 //    _scrollView.foregroundScreenEdgeInsets = UIEdgeInsetsZero;
-    _scrollView.foregroundScreenEdgeInsets = UIEdgeInsetsMake(0, 30, 0, 100);
+    _scrollView.foregroundScreenEdgeInsets = UIEdgeInsetsMake(30, 0, 100, 0);
     [self.view insertSubview:_scrollView atIndex:0];
 }
 
